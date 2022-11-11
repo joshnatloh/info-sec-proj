@@ -1,0 +1,34 @@
+<div class="tw-flex tw-flex-col tw-items-center tw-justify-between tw-h-screen tw-w-20 tw-bg-gray-900 tw-rounded-r-2xl">
+    <div class="tw-flex tw-flex-col tw-items-center tw-justify-center tw-m-2">
+        <a class="tw-m-2" href="{{url_for('requestManagement')}}">
+            {% with iconSrc='/static/public/icons/collection.svg', color='white' %}
+                {% include '/includes/squareButtonComponent.html' %}
+            {% endwith %}
+        </a>
+        <a class="tw-m-2" href="{{url_for('catalogue')}}">
+            {% with iconSrc='/static/public/icons/products.png', color='white' %}
+                {% include '/includes/squareButtonComponent.html' %}
+            {% endwith %}
+        </a>
+        <a class="tw-m-2" href="{{url_for('inventoryManagement')}}">
+            {% with iconSrc='/static/public/icons/boxes-stacked-solid.svg', color='white' %}
+                {% include '/includes/squareButtonComponent.html' %}
+            {% endwith %}
+        </a>
+        <a class="tw-m-2" href="{{url_for('employeeManagement')}}">
+            {% with iconSrc='/static/public/icons/bars-progress-solid.svg', color='white' %}
+                {% include '/includes/squareButtonComponent.html' %}
+            {% endwith %}
+        </a>
+        <a class="tw-m-2" href="{{url_for('view_logs')}}">
+            {% with iconSrc='/static/public/icons/file-earmark-lock.svg', color='white' %}
+                {% include '/includes/squareButtonComponent.html' %}
+            {% endwith %}
+        </a>
+    </div>
+    <a class="tw-m-4" href="{{url_for('employeeInformation')}}">
+        {% with iconSrc='/static/public/icons/circle-info-solid.svg', color='white' %}
+            {% include '/includes/squareButtonComponent.html' %}
+        {% endwith %}
+    </a>
+</div>

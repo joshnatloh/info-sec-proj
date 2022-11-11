@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-center mt-3 mb-5">
+    <div class="border border-5 border-secondary bg-white border-top-0 border-start-0 py-3 px-5" style="width:90vw;">
+        <h1 class="display-6 fw-bold d-inline-block align-middle ms-4 my-3">Add to Cart</h1>
+        <div class="d-flex justify-content-center mb-3">
+            <input type="text" class="form-control" placeholder="Search..." aria-label="Search" style="width:50em;" oninput="Search((this.value).toLowerCase())">
+            <i class="bi bi-search ms-2" style="font-size:1.5em;cursor:pointer;"></i>
+            <script>
+                function Search(item){
+                        var collection = document.getElementsByClassName("card");
+                        for (i = 0;i < collection.length; i++){
+                            if (((collection[i].textContent).toLowerCase()).indexOf(item) > -1) {
+                                collection[i].style.display = "block";
+                                } else {
+                                    collection[i].style.display = "none";
+                                    }
+                        }
+                }
+                </script>
+            
+        </div>
+        <div class="prodList d-flex flex-wrap justify-content-around">
+            
+            {% for prod in prodList %}
+                <div class="card col-5 my-3">
+                    <img src={{ prod['img'] }} class="card-img-top mt-2 ms-2" alt="..." style="height:10em;width:10em;">
+                    <div class="card-body">
+                    <h5 class="card-title">{{ prod['name'] }}</h5>
+                    <p class="card-text">{{ prod['desc'] }}</p>
+                    <a class="btn btn-primary mt-3" data-toggle="modal" data-target="#prodModal" id="prod{{prodList.index(prod)}}" onclick="getProd(this.id)">
+                        Add to Cart
+                    </a>
+                    </div>
+                </div>
+            {% endfor %}
+                
+                <div class="modal fade" id="prodModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                    <div class="modal-dialog d-flex justify-content-center align-items-center" role="document">
+                      <div class="modal-content" style="position:absolute;height:80vh;width:70vw;top:-4em">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="exampleModalLabel" style="margin-top:-1em;">HELLO</h5>
+                          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                          </button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="POST" action="" enctype="multipart/form-data">
+                                {{ form.hidden_tag() }}
+                                {{ form.csrf_token }}
+                                {{ form.productName(class='d-none') }}
+                                <div class="d-flex">
+                                    <div class="form-group">
+                                        {{ form.images.label() }}<br>
+                                        <div class="image my-2">
+                                            <img id="output" style="height:calc(9em*0.9);width:calc(16em*0.9);">
+                                        </div>
+                                        {{ form.images(class="form-control-file", onchange="loadFile(event)", required=True) }}
+                                        {% if form.images.errors %}
+                                            {% for error in form.images.errors %}
+                                                <span class="text-danger">{{ error }}</span>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                    <script>
+                                        var loadFile = function(event) {
+                                          var output = document.getElementById('output');
+                                          output.src = URL.createObjectURL(event.target.files[0]);
+                                          output.onload = function() {
+                                            URL.revokeObjectURL(output.src) // free memory
+                                          }
+                                        };
+                                    </script>
+                                    <div class="right mt-4 d-flex align-items-center">
+                                        <div class="form-group me-5">
+                                            {{ form.warranty.label() }}
+                                            {% if form.warranty.errors %}
+                                            {% for error in form.warranty.errors %}
+                                            <br>
+                                                <span class="text-danger">{{ error }}</span></br>
+                                            {% endfor %}
+                                            {% endif %}
+                                            {% for subfield in form.warranty %}
+                                            <br>
+                                            {{ subfield }}
+                                            {{ subfield.label }}
+                                            {% endfor %}
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="form-group">
+                                                {{ form.price.label() }}
+                                                {% if form.price.errors %}
+                                                {% for error in form.price.errors %}
+                                                <br>
+                                                    <span class="text-danger">{{ error }}</span></br>
+                                                {% endfor %}
+                                                {% endif %}
+                                                {% for subfield in form.price %}
+                                                <br>
+                                                {{ subfield }}
+                                                {{ subfield.label }}
+                                                {% endfor %}
+                                            </div>
+                                            </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    {{ form.issueDesc.label(class="form-control-label mt-2") }}
+                                    {% if form.issueDesc.errors %}
+                                    {{ form.issueDesc(class="form-control form-control-lg is-invalid") }}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.issueDesc.errors %}
+                                                <span>{{ error }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        {{ form.issueDesc(class="form-control form-control-lg") }}
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="modal-footer" style="justify-content: space-between !important;">
+                                <div class="left">
+                                    
+                                </div>
+                                <div class="right">
+                                    <a class="btn btn-secondary" data-dismiss="modal">Close</a>
+                                    {{ form.submit(class="btn btn-primary confirm-order") }}
+                                    <style>.confirm-order{background:#0d6efd;}</style>
+                                </div>
+                            </div>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+        <script>
+            function getProd(id) {
+                product = document.getElementById(id).parentNode.querySelector('.card-text').textContent
+                document.getElementById('exampleModalLabel').textContent = product;
+                document.getElementById('productName').value = product;
+            }
+        </script>
+{% endblock content %}

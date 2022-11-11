@@ -1,0 +1,41 @@
+{% extends "customer/base.html" %}
+{% block title %}My Requests{% endblock %}
+
+{% block customerContent %}
+<div class="d-flex flex-row align-items-center justify-content-between mb-4">
+    <h1 class="display-6 fw-bold d-inline-block align-middle fw-bold col-7">My Requests</h1>
+    <div class="d-flex flex-row align-items-center justify-content-center">
+        <div class="ms-2" id="cart_btn">
+            <a href="{{ url_for('customerCart') }}">
+            <div class="tw-cursor-pointer tw-flex tw-items-center tw-justify-center bg-primary tw-h-12 tw-w-12 tw-rounded-xl hover:tw-shadow-lg tw-transition-shadow tw-duration-200">
+                <i class="bi bi-cart-fill text-white" style="font-size:1.5em;"></i>                
+            </div>
+            </a>
+    </div>
+    </div>
+</div>
+{% for request in requests %}
+<div class="d-flex felx-row align-items-start justify-content-start tw-bg-white tw-rounded-3xl tw-shadow-xl tw-p-5 my-3">
+    <img class="tw-h-64 tw-w-64" src="{{  url_for('static', filename='src/request_pics')+'/'+request.images+'/'+images[requests.index(request)][0] }}">
+    <div class="d-flex flex-grow-1 flex-column align-items-start justify-content-between tw-h-64 ms-4">
+        <div class="d-flex flex-column align-items-start justify-content-start w-100">
+            <p class="fs-3 fw-bold pb-1">{{ request.productName }}</p>
+            <p><b> Date Requested: </b> {{ request.creation_datetime.strftime('%Y%m%d %H:%M') }}</p>
+            <p><b>Issue Description: </b> {{ request.description }}</p>
+        </div>
+        <div class="d-flex flex-row align-items-center justify-content-end w-100">
+            <div class="me-2">
+                {% with label='Pending Quote', color='warning' %}
+                    {% include '/includes/customButtonComponent.html' %}
+                {% endwith %}
+            </div>
+            <div class="ms-2">
+                <div class="tw-cursor-pointer tw-flex tw-items-center tw-justify-center bg-primary tw-h-12 tw-w-12 tw-rounded-xl hover:tw-shadow-lg tw-transition-shadow tw-duration-200">
+                    <i class="bi bi-plus text-white" style="font-size:2em;"></i>                
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{%endblock%}

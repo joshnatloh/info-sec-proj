@@ -1,0 +1,143 @@
+{% extends "base.html" %} 
+{% block content %}
+<main id="main" class="overflow-hidden">
+    <section class="hero">
+        <div class="container d-flex justify-content-center align-items-center flex-md-row">
+            <div class="text col-md-6 d-flex flex-column">
+                <strong class="hero-text-4 fw-bold">
+                    Top quality repairs for your computer parts
+                </strong>
+                <!--hero-text-4-->
+                <h4 class="h4 mt-2">
+                    Your go-to solution for all your computer hardware repairs
+                </h4>
+
+                <ul class="mt-3 d-flex justify-content-start">
+                    <a class="me-3" href="{{url_for('customerCart')}}">
+                        {% with label='Request For Repair', color='primary' %}
+                            {% include '/includes/customButtonComponent.html' %}
+                        {% endwith %}
+                    </a>
+                    <a class="" href="{{url_for('about')}}">
+                        {% with label='Find Out More', color='primary' %}
+                            {% include '/includes/customButtonComponent.html' %}
+                        {% endwith %}
+                    </a>
+                </ul>
+                <!--CTA-btns-->
+            </div>
+            <!--text-->
+        
+            <img
+                class="col-md-6 d-none d-md-block"
+                src="/static/public/Gigabyte_X570_Aorus_Pro_Wifi.png"
+            />
+        </div>
+    </section>
+    <!--hero-->
+    
+    <section class="services blue">
+        <h1 class="h1 service-title display-9 text-center font-weight-bold" style="color:white;">Services We Provide</h1>
+        <div class="service-content d-flex flex-wrap" style="color:white;">
+            {% for summary in service %}
+                <div class="service-container col-md-6 d-flex justify-content-around align-items-center">
+                    <div class="service">
+                        <h2 class="fw-bold display-6">{{service.index(summary)+1}}. {{ summary['service-title'] }}</h2><!--fw-bold-->
+                        <p class="description">{{ summary['service-desc'] }}</p><!--description-->
+                    </div><!--service-->
+                </div><!--service-container-->
+            {% endfor %}
+        </div>
+        <!--service content-->
+
+        <br>
+        <br>
+        <div id="triangle">
+            <svg
+                data-name="Layer 1"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1200 120"
+                preserveAspectRatio="none"
+            >
+                <path d="M1200 0L0 0 598.97 114.72 1200 0z" class="shape-fill"></path>
+            </svg>
+        </div>
+    </section>
+    <!--services-->
+    
+    <section class="workflow">
+        <div id="bottom-tilt">
+            <svg
+                data-name="Layer 1"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 1200 120"
+                preserveAspectRatio="none"
+            >
+                <path
+                d="M1200 120L0 16.48 0 0 1200 0 1200 120z"
+                class="shape-fill"
+                ></path>
+            </svg>
+        </div>
+        <!--#bottom-tilt-->
+
+        <h1 class="h1 workflow-title font-weight-bold text-center display-6 p-1"><b>How It Works</b></h1>
+        <div class="d-flex flex-column flex-md-row justify-content-around p-1 mt-2" id="card-section">
+        {% for work in procedure %}
+            <div class="card col-sm-10 col-md-3 p-1 bg-light mt-1 mx-auto">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold text-center">{{procedure.index(work)+1}}. {{ work['title'] }}</h5>
+                    <i class="{{ work['icon'] }} d-flex justify-content-center p-2"
+                        style="font-size: 5em;"
+                        >
+                    </i>
+                    <p class="card-text text-center">{{ work['desc'] }}</p>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+        <!--workflow-content-->
+    </section>
+    <!--workflow-->
+    
+    <section class="footer p-1">
+        <div class="links d-flex justify-content-around align-items-center">
+            <ul class="col-left list-unstyled">
+                <li class="list-title font-weight-bold">Partnerships</li>
+                <!--list-item-->
+                <i class="mx-2 bi bi-apple list-item text-center"></i>
+                <i class="mx-2 bi bi-google list-item text-center"></i>
+                <i class="mx-2 bi bi-exclude list-item text-center"></i>
+                <i class="mx-2 bi bi-microsoft list-item text-center"></i>
+            </ul>
+            <!--col-left-->
+    
+            <ul class="col-right list-unstyled d-flex justify-content-center align-items-center">
+                <div class="link text-center inline-item">
+                    <a href="#" class="list-item"> <i class="bi bi-facebook"></i> </a
+                    ><!--list-item-->
+                </div>
+                <!--link1-->
+        
+                <div class="link text-center inline-item">
+                    <a href="#" class="list-item"> <i class="bi bi-instagram"></i> </a
+                    ><!--list-item-->
+                </div>
+                <!--link2-->
+        
+                <div class="link text-center inline-item">
+                    <a href="#" class="list-item"> <i class="bi bi-linkedin"></i> </a
+                    ><!--list-item-->
+                </div>
+                <!--link3-->
+            </ul>
+            <!--col-right-->
+        </div>
+        <!--links-->
+    
+        <p class="company text-center">+65 9812 3456 &middot Vision Core &copy</p>
+    </section>
+    <!--footer-->
+
+</main>
+{% endblock %}
