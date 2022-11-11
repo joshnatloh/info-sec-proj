@@ -1,9 +1,9 @@
-# AY2-APP-SECURITY-PROJECT
+# AY2-INFOSECURITY-PROJECT
 ## Members
 1. Aloysius Koh
-2. Wu Yuewei
+2. Ho Xin Ying
 3. Joshua Loh
-4. Kieran Lee
+4. Xu Zijun
 
 ## Requirements
 1. [Git](https://git-scm.com/)
