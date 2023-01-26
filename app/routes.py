@@ -955,11 +955,18 @@ def employeeManagement():
 def employeeManagementDetails(employeeID):
     employee = Employee.query.get_or_404(employeeID)
 
-    return render_template(
-        'employee/employeeManagement/employeeData.html',
+    if employee.permissions <= current_user.permissions:
+        return render_template(
+        'employee/employeeManagement/employeeDatas.html',
         title="Employee Management - " + employee.username,
         employee=employee,
     )
+    else:
+        return render_template(
+            'employee/employeeManagement/employeeData.html',
+            title="Employee Management - " + employee.username,
+            employee=employee,
+        )
 
 @app.route('/employee-management/<int:employeeID>/edit', methods=["GET", "POST"])
 @login_required
