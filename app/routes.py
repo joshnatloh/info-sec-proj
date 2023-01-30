@@ -2,7 +2,7 @@ import email
 from flask_jwt_extended import create_access_token
 #from crypt import methods
 from fileinput import filename
-from app.forms import EmployeeCreationForm, LoginForm, NewCatalogueItem, RegistrationForm, UpdateCatalogueItem, UpdateCustomerAccountForm, RequestResetForm, ResetPasswordForm, CustomerRequestForm, NewInventoryItem, UpdateEmployeeAccountForm, UpdateEmployeeManagementForm, UpdateInventoryItem , uploadfiles, OTPForm, SecurityQuestionsForm, Set2FAForm, SetSecurityQuestionForm
+from app.forms import EmployeeCreationForm, DisableAccount, EnableAccount, LoginForm, NewCatalogueItem, RegistrationForm, UpdateCatalogueItem, UpdateCustomerAccountForm, RequestResetForm, ResetPasswordForm, CustomerRequestForm, NewInventoryItem, UpdateEmployeeAccountForm, UpdateEmployeeManagementForm, UpdateInventoryItem , uploadfiles, OTPForm, SecurityQuestionsForm, SetSecurityQuestionForm
 from app.models import CatalogueProduct, Customer, Employee, Inventory, Request, Upload, Security2FA
 from flask import render_template, url_for, flash, redirect, request, session, abort, jsonify, current_app , send_file
 from io import BytesIO
@@ -122,7 +122,7 @@ def register():
         login_user(user, remember=True)
         log_event('info', 'CUST_REG_LOGIN', str(request.remote_addr), 'email:{}'.format(form.email.data))
         flash(f"Your account has been created! You are now logged in!", "success")
-        return redirect(url_for('set_2fa', event='CUST_REG_LOGIN', email=user.email))
+        return redirect(url_for('set_security_question', event='CUST_REG_LOGIN', email=user.email))
 
     return render_template(
         'authentication/register.html', 
@@ -147,61 +147,71 @@ def login():
                 access_token = create_access_token(identity=form.email.data)
                 next_page = request.args.get("next")
                 search = 'CUST' + user.email
+                email = user.email
+                db.session.commit()
                 security = Security2FA.query.filter_by(email=search).first()
                 if security is None:
-                    return redirect(url_for('set_2fa', next=next_page, email=user.email, event='CUST_LOGIN'))
-                elif security.choice == 'otp':
+                    return redirect(url_for('set_security_question', next=next_page, email=email, event='CUST_LOGIN'))
+                elif security.secSet == 'N':
+                    return redirect(url_for('set_security_question', next=next_page, email=email, event='CUST_LOGIN'))
+                else:
                     otp = str(randint(0, 999999))
                     while len(otp) < 6:
                         otp = '0' + otp
                     message = Mail(
                         from_email='otp.vaporlab@gmail.com',
-                        to_emails=user.email,
-                        subject='2FA Login OTP',
+                        to_emails=email,
+                        subject='MFA Login OTP',
                         html_content=f"<p>Copy the following One-Time-Pin and enter it into the OTP Confirmation Page:</p> <h3>{otp}</h3><p>Please do not disclose this OTP to anyone.</p><p>If this login attempt is not you, please proceed to change your account password.</p>"
                     )
                     sg = SendGridAPIClient(os.environ['SENDGRID_API_KEY'])
                     response = sg.send(message)
                     security.otp = otp
                     db.session.commit()
-                    return redirect(url_for('otp', next=next_page, event='CUST_LOGIN', email=user.email))
-                else:
-                    return redirect(url_for('security_question', next=next_page, event='CUST_LOGIN', email=user.email))
+                    return redirect(url_for('otp', next=next_page, event='CUST_LOGIN', email=email))
             else:
                 flash("Login unsuccessful. Please check email and password.", 'danger')
                 if user:
-                    log_event('warning', 'CUST_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{};entered_pass:{}'.format(user.email, form.password.data))
+                    log_event('warning', 'CUST_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{}'.format(user.email))
                 else:
                     log_event('warning', 'CUST_LOGIN_FAIL_USERNOTFOUND', str(request.remote_addr), 'email_entered:{}'.format(form.email.data))
         elif Employee.query.filter_by(email=form.email.data).first():
             user = Employee.query.filter_by(email=form.email.data).first()
+            if user.disable_status == 'Y':
+                current = datetime.now()
+                if (user.disable_time + timedelta(days=60)) < current:
+                    db.session.delete(user)
+                    db.session.commit()
+                return redirect(url_for('login'))
             if user and bcrypt.check_password_hash(user.password, form.password.data):
                 access_token = create_access_token(identity=form.email.data)
                 search = 'EMP' + user.email
+                email = user.email
+                db.session.commit()
                 security = Security2FA.query.filter_by(email=search).first()
                 if security is None:
-                    return redirect(url_for('set_2fa', email=user.email, event='EMP_LOGIN'))
-                elif security.choice == 'otp':
+                    return redirect(url_for('set_security_question', email=email, event='EMP_LOGIN'))
+                elif security.secSet == 'N':
+                    return redirect(url_for('set_security_question', email=email, event='EMP_LOGIN'))
+                else:
                     otp = str(randint(0, 999999))
                     while len(otp) < 6:
                         otp = '0' + otp
                     message = Mail(
                         from_email='otp.vaporlab@gmail.com',
-                        to_emails=user.email,
-                        subject='2FA Login OTP',
+                        to_emails=email,
+                        subject='MFA Login OTP',
                         html_content=f"<p>Copy the following One-Time-Pin and enter it into the OTP Confirmation Page:</p> <h3>{otp}</h3><p>Please do not disclose this OTP to anyone.</p><p>If this login attempt is not you, please proceed to change your account password.</p>"
                     )
                     sg = SendGridAPIClient(os.environ['SENDGRID_API_KEY'])
                     response = sg.send(message)
                     security.otp = otp
                     db.session.commit()
-                    return redirect(url_for('otp', event='EMP_LOGIN', email=user.email))
-                else:
-                    return redirect(url_for('security_question', event='EMP_LOGIN', email=user.email))
+                    return redirect(url_for('otp', event='EMP_LOGIN', email=email))
             else:
                 flash("Login unsuccessful. Please check email and password.", 'danger')
                 if user:
-                    log_event('warning', 'EMP_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{};entered_pass:{}'.format(user.email, form.password.data))
+                    log_event('warning', 'EMP_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{}'.format(user.email))
                 else:
                     log_event('warning', 'EMP_LOGIN_FAIL_USERNOTFOUND', str(request.remote_addr), 'email_entered:{}'.format(form.email.data))
     return render_template(
@@ -250,20 +260,22 @@ def callback():
             login_user(user, remember=True)
             # LOG!
             if new_acc:
-                return redirect(url_for('set_2fa', event='CUST_REG_LOGIN_GOOGLE', email=email))
+                return redirect(url_for('set_security_question', event='CUST_REG_LOGIN_GOOGLE', email=email))
             else:
                 search = 'CUST' + user.email
                 security = Security2FA.query.filter_by(email=search).first()
                 if security is None:
-                    return redirect(url_for('set_2fa', email=user.email, event='CUST_LOGIN_GOOGLE'))
-                elif security.choice == 'otp':
+                    return redirect(url_for('set_security_question', email=user.email, event='CUST_LOGIN_GOOGLE'))
+                elif security.secSet == 'N':
+                    return redirect(url_for('set_security_question', email=user.email, event='CUST_LOGIN_GOOGLE'))
+                else:
                     otp = str(randint(0, 999999))
                     while len(otp) < 6:
                         otp = '0' + otp
                     message = Mail(
                         from_email='otp.vaporlab@gmail.com',
                         to_emails=user.email,
-                        subject='2FA Login OTP',
+                        subject='MFA Login OTP',
                         html_content=f"<p>Copy the following One-Time-Pin and enter it into the OTP Confirmation Page:</p> <h3>{otp}</h3><p>Please do not disclose this OTP to anyone.</p><p>If this login attempt is not you, please proceed to change your account password.</p>"
                     )
                     sg = SendGridAPIClient(os.environ['SENDGRID_API_KEY'])
@@ -271,8 +283,6 @@ def callback():
                     security.otp = otp
                     db.session.commit()
                     return redirect(url_for('otp', event='CUST_LOGIN_GOOGLE', email=user.email))
-                else:
-                    return redirect(url_for('security_question', event='CUST_LOGIN_GOOGLE', email=user.email))
         return 'Could not fetch your information.'
 
 @app.route('/reset_password', methods=['GET', 'POST'])
@@ -325,20 +335,13 @@ def otp():
         email = request.args.get('email')
         if security.otp == form.otp.data:
             if event=='EMP_LOGIN':
-                user = Employee.query.filter_by(email=email).first()
-                login_user(user, remember=True)
-                log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                return redirect(url_for('employeeInformation'))
+                return redirect(url_for('security_question', event='EMP_LOGIN', email=email))
             else:
                 user = Customer.query.filter_by(email=email).first()
                 if event=='CUST_LOGIN':
-                    login_user(user, remember=True)
-                    log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                    return redirect(next_page) if next_page else redirect(url_for('customerAccount'))
+                    return redirect(url_for('security_question', event='CUST_LOGIN', email=email))
                 else:
-                    login_user(user, remember=True)
-                    log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                    return redirect(url_for('home'))
+                    return redirect(url_for('security_question', event='CUST_LOGIN_GOOGLE', email=email))
         else:
             flash(f"OTP is wrong! Please check for the new OTP sent to your email and try again.", 'danger')
             otp = str(randint(0, 999999))
@@ -347,7 +350,7 @@ def otp():
             message = Mail(
                 from_email='otp.vaporlab@gmail.com',
                 to_emails=email,
-                subject='2FA Login OTP',
+                subject='MFA Login OTP',
                 html_content=f"<p>Copy the following One-Time-Pin and enter it into the OTP Confirmation Page:</p> <h3>{otp}</h3><p>Please do not disclose this OTP to anyone.</p><p>If this login attempt is not you, please proceed to change your account password.</p>"
             )
             sg = SendGridAPIClient(os.environ['SENDGRID_API_KEY'])
@@ -412,47 +415,6 @@ def security_question():
                 return redirect(url_for('security_question', event='CUST_LOGIN_GOOGLE', email=email))
     return render_template('authentication/securityQuestion.html', question=question, options=options, form=form, title='Security Question Check', optionsJ=json.dumps(options))
 
-@app.route('/set2FA', methods=['GET', 'POST'])
-def set_2fa():
-    event = request.args.get('event')
-    email = request.args.get('email')
-    if event=='CUST_LOGIN':
-        next_page = request.args.get('next')
-    form = Set2FAForm()
-    if form.validate_on_submit():
-        if form.choose.data == 'otp':
-            if event=='EMP_LOGIN':
-                key = 'EMP' + email
-                security = Security2FA(email=key, choice='otp')
-                db.session.add(security)
-                db.session.commit()
-                user = Employee.query.filter_by(email=email).first()
-                login_user(user, remember=True)
-                log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                return redirect(url_for('employeeInformation'))
-            else:
-                key = 'CUST' + email
-                security = Security2FA(email=key, choice='otp')
-                db.session.add(security)
-                db.session.commit()
-                user = Customer.query.filter_by(email=email).first()
-                if event=='CUST_LOGIN':
-                    login_user(user, remember=True)
-                    log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                    return redirect(next_page) if next_page else redirect(url_for('customerAccount'))
-                else:
-                    login_user(user, remember=True)
-                    log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                    return redirect(url_for('home'))
-        else:
-            if event=='CUST_LOGIN':
-                return redirect(url_for('set_security_question', next=next_page, event='CUST_LOGIN', email=email))
-            elif event=='EMP_LOGIN':
-                return redirect(url_for('set_security_question', event='EMP_LOGIN', email=email))
-            else:
-                return redirect(url_for('set_security_question', event='CUST_LOGIN_GOOGLE', email=email))
-    return render_template('authentication/set2FA.html', title='Set 2FA Method', form=form)
-
 @app.route('/setSecurityQuestion', methods=['GET', 'POST'])
 def set_security_question():
     event = request.args.get('event')
@@ -477,27 +439,20 @@ def set_security_question():
             options.append(form.option2.data)
         if event=='EMP_LOGIN':
             key = 'EMP' + email
-            security = Security2FA(secQn=form.question.data, email=key, secAns1=options[0], secAns2=options[1], secAns3=options[2], choice='sQn')
+            security = Security2FA(secQn=form.question.data, email=key, secAns1=options[0], secAns2=options[1], secAns3=options[2], secSet='Y')
             db.session.add(security)
             db.session.commit()
-            user = Employee.query.filter_by(email=email).first()
-            login_user(user, remember=True)
-            log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-            return redirect(url_for('employeeInformation'))
+            return redirect(url_for('login'))
         else:
             key = 'CUST' + email
-            security = Security2FA(secQn=form.question.data, email=key, secAns1=options[0], secAns2=options[1], secAns3=options[2], choice='sQn')
+            security = Security2FA(secQn=form.question.data, email=key, secAns1=options[0], secAns2=options[1], secAns3=options[2], secSet='Y')
             db.session.add(security)
             db.session.commit()
             user = Customer.query.filter_by(email=email).first()
             if event=='CUST_LOGIN':
-                login_user(user, remember=True)
-                log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                return redirect(next_page) if next_page else redirect(url_for('customerAccount'))
+                return redirect(url_for('login'))
             else:
-                login_user(user, remember=True)
-                log_event('info', event, str(request.remote_addr), 'email:{}'.format(email))
-                return redirect(url_for('home'))
+                return redirect(url_for('login'))
     return render_template('authentication/setSecurityQuestion.html', title='Set Security Question', form=form)
             
 
@@ -949,16 +904,53 @@ def employeeManagement():
         form=form
     )
 
-@app.route('/employee-management/<int:employeeID>')
+
+@app.route('/disable-employee', methods=['GET', 'POST'])
+@login_required
+@authorised_only
+def disable_employee():
+    empids = request.args.get('empid')
+    employee = Employee.query.filter_by(id=empids).first()
+    employee.disable_status = 'Y'
+    current = datetime.utcnow().strftime(r'%Y-%m-%d %H:%M')
+    employee.disable_time = current
+    db.session.commit()
+    print("committed")
+    return redirect(url_for('employeeManagement'))
+
+@app.route('/enable-employee', methods=['GET', 'POST'])
+@login_required
+@authorised_only
+def enable_employee():
+    empids = request.args.get('empid')
+    employee = Employee.query.filter_by(id=empids).first()
+    employee.disable_status = 'N'
+    employee.disable_time = None
+    db.session.commit()
+    print("committed")
+    return redirect(url_for('employeeManagement'))
+    
+
+
+@app.route('/employee-management/<int:employeeID>', methods=['GET', 'POST'])
 @login_required
 @authorised_only
 def employeeManagementDetails(employeeID):
+    print(employeeID)
+    form = DisableAccount()
+    enable = EnableAccount()
+    if request == 'POST':
+        if 'submit' in request.form:
+            return redirect(url_for('disable_employee', empid=employeeID))
+        elif 'submit1' in request.form:
+            print('enable triggered')
+            return redirect(url_for('enable_employee', empid=employeeID))
     employee = Employee.query.get_or_404(employeeID)
 
     return render_template(
         'employee/employeeManagement/employeeData.html',
         title="Employee Management - " + employee.username,
-        employee=employee,
+        employee=employee, form=form, enable=enable
     )
 
 @app.route('/employee-management/<int:employeeID>/edit', methods=["GET", "POST"])

@@ -41,9 +41,6 @@
                                 {% if 'email_entered' in log %}
                                     email entered: {{ log['email_entered'] }} <br>
                                 {% endif %}
-                                {% if 'entered_pass' in log %}
-                                    entered password: {{ log['entered_pass'] }}
-                                {% endif %}
                                 {% if 'unknown' in log %}
                                     {{ log['unknown'] }}
                                 {% endif %}
@@ -94,9 +91,6 @@
                                 {% endif %}
                                 {% if 'email_entered' in log %}
                                     email entered: {{ log['email_entered'] }} <br>
-                                {% endif %}
-                                {% if 'entered_pass' in log %}
-                                    entered password: {{ log['entered_pass'] }}
                                 {% endif %}
                                 {% if 'unknown' in log %}
                                     {{ log['unknown'] }}
@@ -177,9 +171,6 @@
                                                 {% endif %}
                                                 {% if 'email_entered' in log %}
                                                     email entered: {{ log['email_entered'] }} <br>
-                                                {% endif %}
-                                                {% if 'entered_pass' in log %}
-                                                    entered password: {{ log['entered_pass'] }}
                                                 {% endif %}
                                                 {% if 'unknown' in log %}
                                                     {{ log['unknown'] }}
@@ -276,7 +267,6 @@
                                                                     <tr>
                                                                         <th>Date and Time</th>
                                                                         <th>IP</th>
-                                                                        <th>Entered Password</th>
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody>
@@ -284,7 +274,6 @@
                                                                     <tr>
                                                                         <td>{{ log['datetime'] }}</td>
                                                                         <td>{{ log['address'] }}</td>
-                                                                        <td>{{ log['entered_pass'] }}</td>
                                                                     </tr>
                                                                 {% endfor %}
                                                                 </tbody>

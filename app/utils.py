@@ -323,7 +323,7 @@ def retPMLogs():
     fullRecords.sort(key=timekey)
     lines = []
     for i in fullRecords:
-        message = "WARNING|{}|address:{};event:{};email:{};entered_pass:{}".format(i['datetime'], i['address'], i['event'], i['email'], i['entered_pass'])
+        message = "WARNING|{}|address:{};event:{};email:{}".format(i['datetime'], i['address'], i['event'], i['email'])
         lines.append(message)
     with open('passmonitor.log', 'w') as p:
         p.writelines(lines)

@@ -2,6 +2,7 @@ from app import db, login_manager, app
 from app.customMixin import UserMixin
 from datetime import datetime
 from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+from app import bcrypt
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -45,6 +46,8 @@ class Customer(AccountCredentials):
 class Employee(AccountCredentials):
     id = db.Column(db.Integer, primary_key = True)
     permissions = db.Column(db.Integer, nullable=False)
+    disable_status = db.Column(db.String(1), nullable=False, default="N")
+    disable_time = db.Column(db.String, nullable=True)
 
 class Request(db.Model):
     __tablename__ = 'request'
@@ -82,12 +85,12 @@ class CatalogueProduct(db.Model):
 class Security2FA(db.Model):
     __tablename__ = 'security2fa'
     email = db.Column(db.String(100), unique=True, nullable=False, primary_key=True)
-    choice = db.Column(db.String(3), nullable=False)
     otp = db.Column(db.String(6))
     secQn = db.Column(db.String(200))
     secAns1 = db.Column(db.String(200))
     secAns2 = db.Column(db.String(200))
     secAns3 = db.Column(db.String(200))
+    secSet = db.Column(db.String(1), nullable=False, default='N')
 
 class Upload(db.Model):
     __tablename__ = 'uploadfile'
