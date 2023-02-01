@@ -6,7 +6,8 @@ from app.forms import EmployeeCreationForm, LoginForm, NewCatalogueItem, Registr
 from app.models import CatalogueProduct, Customer, Employee, Inventory, Request, Upload, Security2FA
 from flask import render_template, url_for, flash, redirect, request, session, abort, jsonify, current_app , send_file
 from io import BytesIO
-from app import app, db, bcrypt, stripe_keys, csrf, socket_
+from app import app, db, Bcrypt, stripe_keys, csrf, socket_
+import bcrypt
 from app.train import *
 from flask_login import login_user, current_user, logout_user, login_required
 from requests.exceptions import HTTPError
@@ -112,7 +113,8 @@ def register():
         return redirect(url_for('customerRequest'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        # hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        hashed_password = bcrypt.hashpw(bytes(form.password.data, 'utf-8'), bcrypt.gensalt())
         creation_time=datetime.utcnow().strftime(r'%Y-%m-%d %H:%M')
         emails = form.email.data
         emails = emails.lower()
@@ -143,7 +145,9 @@ def login():
         
         if Customer.query.filter_by(email=form.email.data).first():
             user = Customer.query.filter_by(email=form.email.data).first()
-            if user and bcrypt.check_password_hash(user.password, form.password.data):
+            # if user and Bcrypt.check_password_hash(user.password, form.password.data):
+            if bcrypt.checkpw(bytes(form.password.data, 'utf-8'), user.password):
+                bytes(form.password.data, 'utf-8')
                 access_token = create_access_token(identity=form.email.data)
                 next_page = request.args.get("next")
                 search = 'CUST' + user.email
@@ -175,7 +179,8 @@ def login():
                     log_event('warning', 'CUST_LOGIN_FAIL_USERNOTFOUND', str(request.remote_addr), 'email_entered:{}'.format(form.email.data))
         elif Employee.query.filter_by(email=form.email.data).first():
             user = Employee.query.filter_by(email=form.email.data).first()
-            if user and bcrypt.check_password_hash(user.password, form.password.data):
+            # if user and Bcrypt.check_password_hash(user.password, form.password.data):
+            if bcrypt.checkpw(bytes(form.password.data, 'utf-8'), user.password):
                 access_token = create_access_token(identity=form.email.data)
                 search = 'EMP' + user.email
                 security = Security2FA.query.filter_by(email=search).first()
@@ -244,7 +249,8 @@ def callback():
             user.username = user_data['name']
             user.tokens = json.dumps(token)
             user.picture = download_picture(user_data['picture'])
-            user.password = bcrypt.generate_password_hash(generate_password()).decode('utf-8')
+            # user.password = bcrypt.generate_password_hash(generate_password()).decode('utf-8')
+            user.password = bcrypt.hashpw(bytes(generate_password(), 'utf-8'), bcrypt.gensalt())
             db.session.add(user)
             db.session.commit()
             login_user(user, remember=True)
@@ -297,7 +303,8 @@ def reset_token(token):
         return redirect(url_for('reset_request'))
     form = ResetPasswordForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        # hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        hashed_password = bcrypt.hashpw(bytes(form.password.data, 'utf-8'), bcrypt.gensalt())
         user.password = hashed_password
         db.session.commit()
         flash(f"Your password has been updated! You are now able to login.", "success")
@@ -529,7 +536,8 @@ def editCustomerAccount():
     if form.validate_on_submit():
         Customer.query.filter_by(email=form.email.data).first()
         user = Customer.query.filter_by(email=form.email.data).first()
-        if user and bcrypt.check_password_hash(user.password, form.password.data):
+        # if user and Bcrypt.check_password_hash(user.password, form.password.data):
+        if bcrypt.checkpw(bytes(form.password.data, 'utf-8'), user.password):
             if form.picture.data:
                 picture_file = save_picture(form.picture.data, 'static/src/profile_pics')
                 # os.remove(os.path.join(current_app.root_path,'static/src/profile_pics',current_user.picture))
@@ -538,7 +546,8 @@ def editCustomerAccount():
             current_user.email = form.email.data
             current_user.contact_no = form.contact_no.data
             current_user.address = form.address.data
-            current_user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            # current_user.password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+            current_user.password = bcrypt.hashpw(bytes(form.password.data, 'utf-8'), bcrypt.gensalt())
             db.session.commit()
             flash('Your account details have been updated!', 'success')
             redirect(url_for('customerAccount'))
@@ -664,7 +673,7 @@ def redirect_to_checkout():
 @app.route('/my-requests/cart/checkout/new')
 @login_required
 def create_checkout_session():
-    domain_url = "https://127.0.0.1:5000/my-requests/cart/checkout/"
+    domain_url = "https://10.218.107.76/my-requests/cart/checkout/"
     stripe.api_key = stripe_keys["secret_key"]
     try:
         checkout_session = stripe.checkout.Session.create(
@@ -932,7 +941,8 @@ def employeeManagement():
     form = EmployeeCreationForm()
     creation_time=datetime.utcnow().strftime(r'%Y-%m-%d %H:%M')
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        # hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        hashed_password = bcrypt.hashpw(bytes(form.password.data, 'utf-8'), bcrypt.gensalt())
         if form.picture.data:
             picture_file = save_picture(form.picture.data, 'static/src/profile_pics')
             employee = Employee(picture=picture_file, username=form.username.data, email=form.email.data, password=hashed_password, permissions=form.permissions.data,address=form.address.data,contact_no=form.contact.data,creation_datetime=creation_time)
@@ -1280,7 +1290,8 @@ def upload():
                     
                     
                     #upload the user after parsing the data
-                        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+                        # hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+                        hashed_password = bcrypt.hashpw(bytes(password, 'utf-8'), bcrypt.gensalt())
                         creation_time=datetime.utcnow().strftime(r'%Y-%m-%d %H:%M')
                         user = Customer(username=username, email=email, password=hashed_password, picture='default.png', creation_datetime=creation_time)
                         db.session.add(user)

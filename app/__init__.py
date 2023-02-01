@@ -19,10 +19,10 @@ app.config['SECRET_KEY'] = 'ab2d494b73d4d8ee5ef8f28b5d575bcd'
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'data.sqlite')
 app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
-app.config['REMEMBER_COOKIE_DURATION'] = timedelta(minutes=5)
+app.config['REMEMBER_COOKIE_DURATION'] = timedelta(minutes=0)
 app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
 db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
+Bcrypt = Bcrypt(app)
 csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 login_manager.init_app(app)
@@ -33,6 +33,8 @@ app.config.update(
     SESSION_COOKIE_SECURE=True, #only HTTPS traffic
     SESSION_COOKIE_HTTPONLY=True, #protects content of cookies from being read with javascript
     SESSION_COOKIE_SAMESITE='Lax', #prevents sending cookies with CSRF-prone requests from external sites(submitting form)
+    SESSION_COOKIE_AGE=0,
+    SESSION_EXPIRE_AT_BROWSER_CLOSE=True
 )
 stripe_keys = {
     'secret_key': os.environ['STRIPE_SECRET_KEY'],
