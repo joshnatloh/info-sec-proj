@@ -133,6 +133,7 @@ def register():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        email = request.args.get("email")
         access_token = create_access_token(identity=email)
         return redirect(url_for('customerAccount'))
     google = get_google_auth()
