@@ -193,3 +193,9 @@ class SetSecurityQuestionForm(FlaskForm):
 class uploadfiles(FlaskForm):
     file = FileField("Choose File" , validators=[FileAllowed(['xml'])])
     submit = SubmitField("Upload File")
+
+class DisableAccount(FlaskForm):
+    submit = SubmitField("Confirm")
+
+class EnableAccount(FlaskForm):
+    submit1 = SubmitField("Re-enable")

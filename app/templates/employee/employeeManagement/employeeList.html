@@ -16,6 +16,7 @@
             <th class="tw-w-36 tw-h-12 tw-text-center">ID</th>
             <th class="tw-h-12 tw-text-center">Employee Name</th>
             <th class="tw-w-72 tw-h-12 tw-text-center">Employee Role</th>
+            <th class="tw-w-72 tw-h-12 tw-text-center">Status</th>
         </tr>
         <tbody>
             {% for row in employeeData %}
@@ -23,6 +24,13 @@
                 <td class="tw-w-36 tw-h-12 tw-text-center">{{ row.id }}</td>
                 <td class="tw-h-12 tw-text-center">{{ row.username }}</td>
                 <td class="tw-w-40 tw-h-12 tw-text-center">{{ permissions[row.permissions] }}</td>
+                <td class="tw-w-40 tw-h-12 tw-text-center">
+                    {% if row.disable_status == "N" %}
+                    Active
+                    {% else %}
+                    Disabled
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
