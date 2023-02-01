@@ -22,7 +22,7 @@ app.config['SQLALCHEMY_COMMIT_ON_TEARDOWN'] = True
 app.config['REMEMBER_COOKIE_DURATION'] = timedelta(minutes=0)
 app.config['REMEMBER_COOKIE_REFRESH_EACH_REQUEST'] = True
 db = SQLAlchemy(app)
-Bcrypt = Bcrypt(app)
+bcrypt = Bcrypt(app)
 csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 login_manager.init_app(app)
