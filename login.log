@@ -144,3 +144,4 @@ WARNING|2023-02-14 20:59:52,953|address:192.168.10.55;event:CUST_LOGIN_FAIL_WRON
 WARNING|2023-02-14 20:59:56,923|address:192.168.10.55;event:CUST_LOGIN_FAIL_WRONGPASS;email:zeropercentmob@gmail.com;password_hash:b'$2b$12$7lkJPLPY6tPhkCBM7nzG4.qYtNbtW9YtYIjFQpJ2FxS29rzi/znBC'
 WARNING|2023-02-14 21:00:00,975|address:192.168.10.55;event:CUST_LOGIN_FAIL_WRONGPASS;email:zeropercentmob@gmail.com;password_hash:b'$2b$12$j4bLcW1q7TSgn.fW8aSWGegCIYxH.vGHvKWpYDBIlk.YxTATSFao6'
 WARNING|2023-02-14 21:17:30,677|address:192.168.10.55;event:CUST_LOGIN_FAIL_WRONGPASS;email:zeropercentmob@gmail.com;password_hash:b'$2b$12$4R6bm2NqjNB7P7P/nU6SgebYnIHYJ8kOqWBtj7N1SqAA/D7cRea.a'
+INFO|2023-02-14 21:30:57,711|address:192.168.1.108;event:EMP_LOGIN;email:jlohyolo@gmail.com
