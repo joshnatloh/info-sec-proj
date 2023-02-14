@@ -41,45 +41,24 @@
         </div>
     </div>
     <div style='margin-top:100px' display:'inline'>
-        <form method="POST">
-            {% if employee.disable_status == 'Y' %}
-            <button type="button" class='btn btn-danger' disabled="true" style="background-color: #dc3545;">
-                Disable
-            </button>
-            {% else %}
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#myModal_{{employee.id}}" style="background-color: #dc3545;">
-                Disable
-            </button>
-            {% endif %}
-
-            <div class="modal fade" id="myModal_{{employee.id}}">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-
-                    <!-- Modal Header -->
-                    <div class="modal-header">
-                        <h4 class="modal-title">Disable Confirmation</h4>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-
-                    <!-- Modal body -->
-                    <div class="modal-body">
-                        Are you sure you want to disable the account {{ employee.username }}?
-                    </div>
-
-                    <!-- Modal footer -->
-                    <div class="modal-footer">
-                            {{ form.hidden_tag() }}
-                            {{ form.submit(class='btn btn-danger') }}
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    </div>
-
-                    </div>
-                </div>
-            </div>
-            {{ enable.hidden_tag() }}
-            {{ enable.submit1(class='btn btn-primary', style='background-color: #0d6efd') }}
-        </form>
+        {% if employee.disable_status == 'Y' %}
+        <button class='btn btn-danger', style='background-color: #dc3545' id='disablebtn' disabled='true'>Disable</button>
+        <button class='btn btn-primary', style='background-color: #0d6efd' id='enablebtn'>Re-enable</button>
+        {% else %}
+        <button class='btn btn-danger', style='background-color: #dc3545' id='disablebtn'>Disable</button>
+        <button class='btn btn-primary', style='background-color: #0d6efd' id='enablebtn' disabled='true'>Re-enable</button>
+        {% endif %}
     </div>
 </div>
+
+<script>
+  var button = document.getElementById("enablebtn");
+  button.addEventListener("click", function() {
+    window.location.href = "{{ url_for('enable_employee', empid=employee.id) }}";
+  });
+  var btn = document.getElementById("disablebtn");
+  btn.addEventListener("click", function() {
+    window.location.href = "{{ url_for('disable_employee', empid=employee.id) }}";
+  });
+</script>
 {% endblock %}

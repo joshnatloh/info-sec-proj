@@ -29,6 +29,7 @@ class AccountCredentials(db.Model, UserMixin):
 class Customer(AccountCredentials):
     id = db.Column(db.Integer, primary_key = True)
     requests = db.relationship('Request', backref='owner', lazy=True)
+    disable_status = db.Column(db.String(1), nullable=False, default="N")
 
     def get_reset_token(self, expires_sec=1800):
         s = Serializer(app.config['SECRET_KEY'], expires_sec)

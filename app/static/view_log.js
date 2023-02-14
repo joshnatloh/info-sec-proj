@@ -263,12 +263,23 @@ function updatePassMonitor(returnDict) {
                                             <tr> \
                                                 <th>Date and Time</th> \
                                                 <th>IP</th> \
-                                                <th>Entered Password</th> \
                                             </tr> \
                                         </thead> \
                                         <tbody id='tempTable'> \
                                         </tbody> \
                                     </table> \
+                                </div> \
+                            </div> \
+                            <div class='row'> \
+                                <div class='col'> \
+                                    <button id='disableTemp' class='btn btn-danger' style='background-color: #dc3545'> \
+                                        Disable Account \
+                                    </button> \
+                                </div> \
+                                <div class='col'> \
+                                <button id='blockTemp' class='btn btn-primary' style='background-color: #0d6efd'> \
+                                    Block IP Addresses \
+                                </button> \
                                 </div> \
                             </div> \
                         </div> \
@@ -298,15 +309,12 @@ function updatePassMonitor(returnDict) {
                 var modalTemplate = "<tr> \
                     <td id='modalFirst'></td> \
                     <td id='modalSecond'></td> \
-                    <td id='modalThird'></td> \
                 </tr>";
                 document.getElementById('tempTable').innerHTML += modalTemplate;
                 document.getElementById('modalFirst').innerText = attacks[x]['datetime'];
                 document.getElementById('modalSecond').innerText = attacks[x]['address'];
-                document.getElementById('modalThird').innerText = attacks[x]['entered_pass'];
                 document.getElementById('modalFirst').removeAttribute('id');
                 document.getElementById('modalSecond').removeAttribute('id');
-                document.getElementById('modalThird').removeAttribute('id');
             };
             document.getElementById('tempTable').removeAttribute('id');
             document.getElementById('firstTemp').removeAttribute('id');
@@ -314,7 +322,41 @@ function updatePassMonitor(returnDict) {
             document.getElementById('thirdTemp').removeAttribute('id');
             document.getElementById('fourthTemp').removeAttribute('id');
             document.getElementById('tempBtn').removeAttribute('id');
+
+            var disablebtn = document.getElementById('disableTemp');
+            var disableid = '';
+            disableid = disableid.concat('disable', i.toString());
+            var disableclick = '';
+            disableclick = disableclick.concat('disableAccount(', i.toString(), ')');
+            disablebtn.setAttribute('id', disableid);
+            disablebtn.setAttribute('onclick', disableclick);
+            if (data[i]['status']=='Y') {
+                disablebtn.disabled = true;
+            };
+            var blockbtn = document.getElementById('blockTemp');
+            var blockid = '';
+            blockid = blockid.concat('block', i.toString());
+            var blockclick = '';
+            blockclick = blockclick.concat('blockIP(', i.toString(), ')');
+            blockbtn.setAttribute('id', blockid);
+            blockbtn.setAttribute('onclick', blockclick);
         };
         jsonPM = data;
     };
 };
+
+
+function disableReturn(returnDict){
+    var id = 'disable' + returnDict['id'];
+    var button = document.getElementById(id);
+    button.disabled = true;
+}
+
+function blockIPReturn(data){
+    if ('new' in data){
+        alert(data['new']);
+    }
+    else {
+        alert('No new IP Addresses blocked.')
+    };
+}

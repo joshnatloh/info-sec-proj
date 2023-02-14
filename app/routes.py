@@ -12,7 +12,7 @@ from app.train import *
 from flask_login import login_user, current_user, logout_user, login_required
 from requests.exceptions import HTTPError
 import json
-from app.utils import get_google_auth, generate_password, download_picture, save_picture, send_reset_email, log_event, calcDataMnW, splitLogs, calcDataP8, retPMLogs 
+from app.utils import get_google_auth, generate_password, download_picture, save_picture, send_reset_email, log_event, calcDataMnW, splitLogs, calcDataP8, retPMLogs, read_blocklist
 from app.config import Auth
 from flask_wtf.csrf import CSRFError
 from flask_mail import Message
@@ -143,11 +143,20 @@ def login():
     session['oauth_state'] = state
     form = LoginForm()
     if form.validate_on_submit():
+        blocklist = read_blocklist()
+        address = request.remote_addr + '\n'
+        if address in blocklist:
+            flash('We have detected suspicious behaviour from this address and have blocked it.', 'danger')
+            return redirect(url_for('login'))
+        
         
         if Customer.query.filter_by(email=form.email.data).first():
             user = Customer.query.filter_by(email=form.email.data).first()
+            if user.disable_status == 'Y':
+                flash('Account has been disabled. Please approach Administrator for further queries.', 'danger')
+                return redirect(url_for('login'))
             # if user and Bcrypt.check_password_hash(user.password, form.password.data):
-            if bcrypt.checkpw(bytes(form.password.data, 'utf-8'), user.password):
+            if bcrypt.checkpw(bytes(form.password.data, 'utf-8'), bytes(user.password, 'utf-8')):
                 bytes(form.password.data, 'utf-8')
                 access_token = create_access_token(identity=form.email.data)
                 next_page = request.args.get("next")
@@ -177,11 +186,20 @@ def login():
             else:
                 flash("Login unsuccessful. Please check email and password.", 'danger')
                 if user:
-                    log_event('warning', 'CUST_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{}'.format(user.email))
+                    hashed_attempt = bcrypt.hashpw(bytes(form.password.data, 'utf-8'), bcrypt.gensalt())
+                    log_event('warning', 'CUST_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{};password_hash:{}'.format(user.email, hashed_attempt))
                 else:
                     log_event('warning', 'CUST_LOGIN_FAIL_USERNOTFOUND', str(request.remote_addr), 'email_entered:{}'.format(form.email.data))
         elif Employee.query.filter_by(email=form.email.data).first():
             user = Employee.query.filter_by(email=form.email.data).first()
+            if user.disable_status == 'Y':
+                if datetime.now()-datetime.strptime(user.disable_time, r'%Y-%m-%d %H:%M') >= timedelta(days=60):
+                    db.session.delete(user)
+                    db.session.commit()
+                    flash("Login unsuccessful. Please check email and password.", 'danger')
+                    return redirect(url_for('login'))
+                flash('Account has been disabled. Please approach Administrator for further queries.', 'danger')
+                return redirect(url_for('login'))
             if bcrypt.checkpw(bytes(form.password.data, 'utf-8'), user.password):
                 access_token = create_access_token(identity=form.email.data)
                 search = 'EMP' + user.email
@@ -210,7 +228,8 @@ def login():
             else:
                 flash("Login unsuccessful. Please check email and password.", 'danger')
                 if user:
-                    log_event('warning', 'EMP_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{}'.format(user.email))
+                    hashed_attempt = bcrypt.hashpw(bytes(form.password.data, 'utf-8'), bcrypt.gensalt())
+                    log_event('warning', 'EMP_LOGIN_FAIL_WRONGPASS', str(request.remote_addr), 'email:{};password_hash:{}'.format(user.email, hashed_attempt))
                 else:
                     log_event('warning', 'EMP_LOGIN_FAIL_USERNOTFOUND', str(request.remote_addr), 'email_entered:{}'.format(form.email.data))
     return render_template(
@@ -941,27 +960,20 @@ def enable_employee():
 @authorised_only
 def employeeManagementDetails(employeeID):
     print(employeeID)
-    form = DisableAccount()
-    enable = EnableAccount()
-    if request == 'POST':
-        if 'submit' in request.form:
-            return redirect(url_for('disable_employee', empid=employeeID))
-        elif 'submit1' in request.form:
-            print('enable triggered')
-            return redirect(url_for('enable_employee', empid=employeeID))
+    
     employee = Employee.query.get_or_404(employeeID)
 
     if employee.permissions <= current_user.permissions:
         return render_template(
-        'employee/employeeManagement/employeeDatas.html',
-        title="Employee Management - " + employee.username,
-        employee=employee,
+            'employee/employeeManagement/employeeDatas.html',
+            title="Employee Management - " + employee.username,
+            employee=employee,
     )
     else:
         return render_template(
             'employee/employeeManagement/employeeData.html',
             title="Employee Management - " + employee.username,
-            employee=employee,
+            employee=employee
         )
 
 @app.route('/employee-management/<int:employeeID>/edit', methods=["GET", "POST"])
@@ -1135,6 +1147,50 @@ def check_pm_update(data):
                 sendData['data'] = passMonitorData
                 sendData['length'] = len(passMonitorData)
                 break
+    return sendData
+
+@socket_.on('disable_customer')
+def disable_customer(data):
+    email = data['email'][:-1]
+    acctype = data['account']
+    if acctype == 'CUSTOMER':
+        user = Customer.query.filter_by(email=email).first()
+        user.disable_status = 'Y'
+        db.session.commit()
+    elif acctype == 'EMPLOYEE':
+        user = Employee.query.filter_by(email=email).first()
+        user.disable_status = 'Y'
+        current = datetime.utcnow().strftime(r'%Y-%m-%d %H:%M')
+        user.disable_time = current
+        db.session.commit()
+    sendData = {}
+    sendData['id'] = data['id']
+    return sendData
+
+@socket_.on('block_IP')
+def block_IP(data):
+    IP_list = []
+    new_list = []
+    datalist = data['data']
+    for i in datalist:
+        addr = i['address'] + '\n'
+        if addr not in IP_list:
+            IP_list.append(addr)
+    blocklist = read_blocklist()
+    for i in IP_list:
+        if i not in blocklist:
+            blocklist.append(i)
+            new_list.append(i)
+    with open('IP_Blocklist.txt', 'w') as f:
+        f.writelines(blocklist)
+    sendData = {}
+    if new_list:
+        alerttext = 'The following IP Addresses were blocked:\n'
+        for i in new_list:
+            alerttext = alerttext + i
+        sendData['new'] = alerttext
+    else:
+        sendData['none'] = True
     return sendData
 
 

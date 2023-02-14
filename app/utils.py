@@ -14,6 +14,7 @@ import logging
 from datetime import datetime, timedelta
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
+from app.models import Customer, Employee
 
 login_logger = logging.getLogger("login")
 login_logger.setLevel('DEBUG')
@@ -307,13 +308,20 @@ def retPMLogs():
     for i in range(len(fullAttackList)):
         tempDict = {}
         event = fullAttackList[i][0]['event']
+        email = fullAttackList[i][0]['email'][:-1]
         if event == 'CUST_LOGIN_FAIL_WRONGPASS':
             tempDict['account_type'] = 'CUSTOMER'
+            user = Customer.query.filter_by(email=email).first()
         else:
             tempDict['account_type'] = 'EMPLOYEE'
+            user = Employee.query.filter_by(email=email).first()
         tempDict['email'] = fullAttackList[i][0]['email']
         tempDict['attempts'] = len(fullAttackList[i])
         tempDict['data'] = fullAttackList[i]
+        if user:
+            tempDict['status'] = user.disable_status
+        else:
+            tempDict['status'] = 'Y'
         returnDict[i] = tempDict
     # Saving everything in passmonitor.log
     fullRecords = []
@@ -331,3 +339,7 @@ def retPMLogs():
     return returnDict, fullRecords[-1]['datetime']
 
 
+def read_blocklist():
+    with open('IP_Blocklist.txt', 'r') as f:
+        lines = f.readlines()
+    return lines

@@ -280,6 +280,24 @@
                                                             </table>
                                                         </div>
                                                     </div>
+                                                    <div class='row'>
+                                                        <div class='col'>
+                                                            {% if passMonitorData[key]['status'] == 'N' %}
+                                                            <button id='disable{{ key }}' class='btn btn-danger' style='background-color: #dc3545' onclick="disableAccount({{key}})">
+                                                                Disable Account
+                                                            </button>
+                                                            {% elif passMonitorData[key]['status'] == 'Y' %}
+                                                            <button id='disable{{ key }}' class='btn btn-danger' style='background-color: #dc3545' disabled='true'>
+                                                                Disable Account
+                                                            </button>
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class='col'>
+                                                            <button id='block{{ key }}' class='btn btn-primary' style='background-color: #0d6efd' onclick='blockIP({{key}})'>
+                                                                Block IP Addresses
+                                                            </button>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 <div class='modal-footer'>
                                                     <button type='button' class='btn btn-secondary' data-bs-dismiss='modal' style='background-color:#6c757d'>Close</button>
@@ -406,5 +424,16 @@
         socket.emit('check_p8t_update', {'past8log':past8log}, updatePast8Tables);
         socket.emit('check_pm_update', {'data': jsonPM}, updatePassMonitor);
     }, 2000);
+    
+    function disableAccount(id){
+        var email = jsonPM[id]['email'];
+        var account_type = jsonPM[id]['account_type'];
+        socket.emit('disable_customer', {'id':id, 'email': email, 'account': account_type}, disableReturn)
+    }
+
+    function blockIP(id){
+        var sendData = jsonPM[id]['data'];
+        socket.emit('block_IP', {'data':sendData}, blockIPReturn);
+    }
 </script>
 {% endblock %}
